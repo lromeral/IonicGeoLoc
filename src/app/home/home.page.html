@@ -1,20 +1,44 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
     <ion-title>
-      Blank
+      Mapa
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+<form name="formPosicion">
+  <div class="wrapper">
+      <ion-label for="nombre">Nombre</ion-label>
+      <ion-input name="nombre" id="nombre" placeholder="Nombre" [(ngModel)]="usuario" required></ion-input>
   </div>
+  <ion-button (click)="getPosicion()" color="primary" expand="full" [disabled]="enviado">Marcar mi posicion
+  </ion-button>
+  <ion-button (click)="deletePosicion(usuario)" color="danger" expand="full" [disabled]="!enviado">Borrar Posicion</ion-button>
+</form>
+  <ion-grid>
+    <ion-row>
+      <ion-col>
+        <ion-list>
+          <ion-item *ngFor="let p of posiciones">
+
+            {{p.usuario}}
+            <div class="toolbar" slot="end">
+              <ion-button (click)="locateUser(p)" color="primary">
+                <ion-icon name="location"></ion-icon>
+              </ion-button>
+              <ion-button (click)="deletePosicion(p.usuario)" color="danger">
+                <ion-icon name="trash"></ion-icon>
+              </ion-button>
+              <ion-button (click)="getDoc(p.usuario)" color="danger" expand="full">Test</ion-button>
+            </div>
+          </ion-item>
+        </ion-list>
+      </ion-col>
+      <ion-col>
+        <div id='map'></div>
+      </ion-col>
+    </ion-row>
+</ion-grid>
+
 </ion-content>
