@@ -31,7 +31,7 @@ export class HomePage {
   usuario: string;
   enviado: boolean = false;
   watchPos: Subscription;
-
+  usuarioSeleccionado: IPosicion;
 
   constructor(
     private geoloc: Geolocation,
