@@ -32,6 +32,7 @@ export class HomePage {
   enviado: boolean = false;
   watchPos: Subscription;
 
+
   constructor(
     private geoloc: Geolocation,
     private toastController: ToastController,
@@ -84,8 +85,6 @@ export class HomePage {
 
       
   }
-
-
   ///////////////////// MAPAS ////////////////////////////
 
   //OBTENER POSICION

@@ -7,41 +7,20 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-<form name="formPosicion">
+
   <div class="wrapper">
       <ion-label for="nombre">Nombre</ion-label>
-      <ion-input name="nombre" id="nombre" placeholder="Nombre" [(ngModel)]="usuario" required></ion-input>
-  </div>
-  <ion-button (click)="getPosicion()" color="primary" expand="full" [disabled]="enviado">Marcar mi posicion
-  </ion-button>
-  <ion-button (click)="deletePosicion(usuario)" color="danger" expand="full" [disabled]="!enviado">Borrar Posicion</ion-button>
+      <ion-input name="nombre" id="nombre" placeholder="Nombre" [(ngModel)]="usuario" required [disabled]="enviado">
+      </ion-input>
+    <ion-button (click)="getPosicion()" color="primary" expand="full" [disabled]="enviado">Marcar mi posicion
+    </ion-button>
+    <ion-button (click)="deletePosicion(usuario)" color="danger" expand="full" [disabled]="!enviado">Borrar Posicion
+    </ion-button>
+</div>
 
+    <ion-label id="lbl_user" style="float: left;">Usuarios:</ion-label><ion-select placeholder="Selecciona usuario" interface="action-sheet" okTest="Buscar" cancelText="Cancelar" (ionChange)="locateUser(usuarioSeleccionado)" [(ngModel)]="usuarioSeleccionado">
+      <ion-select-option style="float: left;" *ngFor="let p of posiciones" [value]="p">{{p.usuario}} a las {{p.timestamp.seconds * 1000 | date: 'dd/MM/y - HH:mm:ss'}}</ion-select-option>
+    </ion-select>
 
-</form>
-  <ion-grid>
-    <ion-row>
-      <ion-col col-2>
-        <ion-list>
-          <ion-item *ngFor="let p of posiciones">
-            <div id="usuario">
-              {{p.usuario}} 
-            </div>
-            <div id="fecha" slot="end">
-              {{p.timestamp.seconds * 1000 | date: 'dd/MM/y - HH:mm:ss'}}
-            </div>
-            
-            <div class="toolbar" slot="end">
-              <ion-button (click)="locateUser(p)" color="primary">
-                <ion-icon name="location"></ion-icon>
-              </ion-button>
-            </div>
-          </ion-item>
-        </ion-list>
-      </ion-col>
-      <ion-col col-10>
-        <div id='map'></div>
-      </ion-col>
-    </ion-row>
-</ion-grid>
-
+    <div id='map'></div>
 </ion-content>
