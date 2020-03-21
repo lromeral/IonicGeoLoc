@@ -7,6 +7,8 @@ import { IPosicion } from '../models/posicion.interface';
 import { AngularFirestore, DocumentReference } from '@angular/fire/firestore';
 import 'firebase/firestore';
 import { Observable, Subscription } from 'rxjs';
+import { findLast } from '@angular/compiler/src/directive_resolver';
+import { ConditionalExpr } from '@angular/compiler';
 
 
 
@@ -21,13 +23,14 @@ export class HomePage {
   mapbox = (mapboxgl as typeof mapboxgl);
   miPosicion: Geoposition;
   posiciones: IPosicion[] = [];
+  marcadores: mapboxgl.Marker[] = [];
   map: mapboxgl.Map;
   initLat = 42.8157447;
   initLng = -1.7200615;
   coleccion: string = 'localizaciones';
   usuario: string;
   enviado: boolean = false;
-  watchPos : Subscription;
+  watchPos: Subscription;
 
   constructor(
     private geoloc: Geolocation,
@@ -43,19 +46,43 @@ export class HomePage {
   ionViewWillEnter() {
 
     //Inicializacion
+    if (localStorage.getItem('user')) {
+      //Nombre de usuario
+      this.usuario = localStorage.getItem('user');
+      //Posicion
+            this.geoloc.getCurrentPosition().then(
+        res => this.miPosicion = res);
+      //Seguir usuario
+      this.setWatchposition(this.usuario);
+      //Ajustar botones  
+      this.enviado= true;
+
+
+
+    };
+
     //this.getPosicion();
     this.getMap(this.initLat, this.initLng);
+
 
     //Localizaciones
     this.db.collection(this.coleccion).valueChanges().subscribe(
       (pos: IPosicion[]) => {
         this.posiciones = pos;
-        /*this.posiciones.forEach(p =>
-          this.marcarPosicion(p.longitud, p.latitud)
-          )*/
-      }
-    )
+        console.log("posiciones ", this.posiciones);
+        
+        this.marcadores.forEach(item => item.remove());
+        this.marcadores=[];
+        this.posiciones.forEach( item => this.marcadores.push(new mapboxgl.Marker().setLngLat([item.longitud,item.latitud]).addTo(this.map)));
 
+        console.log ("Marcadores ", this.marcadores);
+
+
+      }
+      );
+
+
+      
   }
 
 
@@ -63,7 +90,12 @@ export class HomePage {
 
   //OBTENER POSICION
   getPosicion() {
-    console.log("entra");
+    if(!this.usuario){
+      this.showError ("Usuario no válido");
+      return;
+    } 
+    
+    
     this.geoloc.getCurrentPosition().then(
       res => {
         this.miPosicion = res;
@@ -76,28 +108,29 @@ export class HomePage {
         }
         this.createPosicion(p);
         this.enviado = true;
-        this.showInfo("Adquirida Localizacion");
 
       }
     ).catch(error => {
       console.error("Error al adquirir la posición" + ' ' + error);
       this.showError("No se pudo obtener la localizacion")
     });
+  }
 
 
-    this.watchPos = this.geoloc.watchPosition().subscribe( pos => console.log(pos));
+  //Seguimiento
 
-    console.log("sale");
+  setWatchposition (user: string){
 
-/*   this.watchPos$ = this.geoloc.watchPosition();
-      this.watchPos$.subscribe(position => {
-        this.miPosicion = position;
-        this.db.collection(this.coleccion)
-          .get().toPromise()
-          .then(
-            doc =>
+    //Busca el id del documento del usuario
+    
 
-              this.db.firestore.collection(this.coleccion).doc(doc.docs[0]['id']).set(
+    this.db.collection(this.coleccion, query => query.where ('usuario','==', this.usuario))
+    .get()
+    .toPromise()
+    .then(doc => doc.forEach((ref) =>{
+
+  
+              this.db.firestore.collection(this.coleccion).doc(ref.id).set(
                 {
                   usuario: this.usuario,
                   latitud: this.miPosicion.coords.latitude,
@@ -105,12 +138,17 @@ export class HomePage {
                   timestamp: new Date()
                 }
                 , { merge: true }
-              )
+              );
+            }
+    )).catch (err => this.showError ("No se pudo obtener la localizacion"));
+       
 
-          );
-      }) */
-  }
 
+
+
+
+    } 
+      
 
 
   //OBTENER MAPA
@@ -126,21 +164,6 @@ export class HomePage {
   }
 
 
-  //MARCAR EN MAPA
-  marcarPosicion(lng: number, lat: number, color: string = 'red') {
-
-    const miMarca = new mapboxgl.Marker(
-      {
-        color: color
-      }
-    )
-      .setLngLat([lng, lat])
-      .addTo(this.map);
-
-    this.showInfo("Marcador añadido");
-    console.log(miMarca);
-  }
-
   locateUser(usuario: IPosicion) {
     this.map.flyTo(
       {
@@ -155,13 +178,29 @@ export class HomePage {
   //CREATE POSICION
   createPosicion(p: IPosicion) {
 
-    if (p) {
-      this.db.collection(this.coleccion)
-        .add(p).then(
-          _ => console.log("datos añadidos")
-        ).catch(err => console.log("Error firestore"))
-    }
-    console.log("createPosicion() ", p);
+    //Check si ya existe el usuario
+    this.db.collection(this.coleccion, query => query.where('usuario', "==", p.usuario)).get().toPromise().then(
+      ref => {
+        const referencia = ref.docs[0];
+        console.log("Referencia ", referencia)
+        if (referencia) {
+          this.showError("El usuario ya existe");
+          return;
+        }
+        else {
+          if (p) {
+            this.db.collection(this.coleccion)
+              .add(p).then(
+                _ => {
+                  localStorage.setItem('user', this.usuario);
+                  this.showInfo("Adquirida Localizacion");
+                }
+              ).catch(err => console.log("Error firestore"))
+          }
+          console.log("createPosicion() ", p);
+        }
+      }
+    );
   }
 
   //READ POSICION
@@ -198,8 +237,8 @@ export class HomePage {
     this.db.collection(this.coleccion).valueChanges().subscribe(
       (data: IPosicion[]) => this.posiciones = data
     )
-  }
 
+  }
 
   //UPDATE POSICION
   updatePosicion(usuario: string) {
@@ -219,13 +258,15 @@ export class HomePage {
     this.db.collection(this.coleccion, query => query.where('usuario', '==', usuario)).get().subscribe(
       (doc) => {
         doc.forEach(
-          u => u.ref.delete())
+          u => u.ref.delete());
+          localStorage.removeItem('user');
+          this.usuario='';       
       },
       err => console.log('Error ', err),
       () => console.log('Borrado Completado')
     );
-    this.watchPos.unsubscribe;
     this.enviado = false;
+    this.showInfo("Borrado Completado");
   }
 
   async showError(mensaje: string = 'Error Desconocido') {

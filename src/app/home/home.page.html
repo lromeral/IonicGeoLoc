@@ -15,27 +15,30 @@
   <ion-button (click)="getPosicion()" color="primary" expand="full" [disabled]="enviado">Marcar mi posicion
   </ion-button>
   <ion-button (click)="deletePosicion(usuario)" color="danger" expand="full" [disabled]="!enviado">Borrar Posicion</ion-button>
+
+
 </form>
   <ion-grid>
     <ion-row>
-      <ion-col>
+      <ion-col col-2>
         <ion-list>
           <ion-item *ngFor="let p of posiciones">
-
-            {{p.usuario}}
+            <div id="usuario">
+              {{p.usuario}} 
+            </div>
+            <div id="fecha" slot="end">
+              {{p.timestamp.seconds * 1000 | date: 'dd/MM/y - HH:mm:ss'}}
+            </div>
+            
             <div class="toolbar" slot="end">
               <ion-button (click)="locateUser(p)" color="primary">
                 <ion-icon name="location"></ion-icon>
               </ion-button>
-              <ion-button (click)="deletePosicion(p.usuario)" color="danger">
-                <ion-icon name="trash"></ion-icon>
-              </ion-button>
-              <ion-button (click)="getDoc(p.usuario)" color="danger" expand="full">Test</ion-button>
             </div>
           </ion-item>
         </ion-list>
       </ion-col>
-      <ion-col>
+      <ion-col col-10>
         <div id='map'></div>
       </ion-col>
     </ion-row>
